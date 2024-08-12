@@ -14,19 +14,28 @@ const siniestro = require('../models/siniestro')
 module.exports = {
     listar: async (req, res) => {
         const token = req.headers['authorization']
-        const acceso = await validationJWT(JSON.parse(token)).catch((err)=>(console.log(err)))
-        if (acceso) {
+
+        if (token) {
             try {
-                const casos = await Caso.find()
-                    .populate('cliente')
-                    .populate('directorACargo')
-                    .populate('abogadoACargo')
-                    .populate('abogadoInternoDeLaCompania')
-                    .populate('siniestro')
-                    .populate('juzgado')
-                    .populate('usuarioCreador')
-                    .populate('usuariosInvolucrados')
-                res.json(casos)
+                const acceso = await validationJWT(JSON.parse(token)).catch((err) => (console.log(err)))
+                if (acceso) {
+                    try {
+                        const casos = await Caso.find()
+                            .populate('cliente')
+                            .populate('directorACargo')
+                            .populate('abogadoACargo')
+                            .populate('abogadoInternoDeLaCompania')
+                            .populate('siniestro')
+                            .populate('juzgado')
+                            .populate('usuarioCreador')
+                            .populate('usuariosInvolucrados')
+                        res.json(casos)
+                    } catch (error) {
+                        res.status(500).json({ message: error.message })
+                    }
+                } else {
+                    res.status(500).json({ message: 'Acceso Denegado' })
+                }
             } catch (error) {
                 res.status(500).json({ message: error.message })
             }
@@ -34,15 +43,16 @@ module.exports = {
             res.status(500).json({ message: 'Acceso Denegado' })
         }
 
+
     },
     listar2: async (req, res) => {
         const data = req.body.data
         const token = req.headers['authorization']
         console.log(data)
-        
-        const acceso = await validationJWT(JSON.parse(token)).catch((err)=>(console.log(err)))
+
+        const acceso = await validationJWT(JSON.parse(token)).catch((err) => (console.log(err)))
         if (acceso) {
-            
+
             try {
                 const casos = await Caso.find(data)
                     .populate('cliente')
@@ -116,10 +126,10 @@ module.exports = {
                 tipoDeMoneda: 'Peso',
                 fechaDeTerminacion: new Date('2024-02-01'),
                 motivoDeTerminacion: 'FALLO A FAVOR DEL DEMANDADO',
-                cliente2: {nombre: 'DANIEL COLON'}, // ObjectId de Cliente
+                cliente2: { nombre: 'DANIEL COLON' }, // ObjectId de Cliente
                 fechaDeAsignacion2: new Date('2023-07-15'),
-                abogadoInternoDeLaCompania2: {nombre: 'JUAN DAVID'}, // ObjectId de Usuario
-                siniestro2: { numero: '123456789'}, // ObjectId de Siniestro
+                abogadoInternoDeLaCompania2: { nombre: 'JUAN DAVID' }, // ObjectId de Usuario
+                siniestro2: { numero: '123456789' }, // ObjectId de Siniestro
                 numeroDeAplicativo2: 'N/A',
                 fechaDeNotificacion2: new Date('2023-07-15'),
                 seInicioEjecutivoAContinuacionDeOrdinario: false,
@@ -155,14 +165,14 @@ module.exports = {
                 fechaUltimaActuacion: new Date('2024-07-15'),
                 tituloUltimaActuacion: 'DECISIÓN FINAL - JUEZ CARLOS RODRIGUEZ',
                 fechaUltimoCambioDeEstado: new Date('2024-02-01T03:00:00Z'),
-                usuarioCreador: { nombre: 'admin'}, // ObjectId de Usuario
+                usuarioCreador: { nombre: 'admin' }, // ObjectId de Usuario
                 notificado: 'true',
                 cartera: 'Activa',
                 numeroCredencial: '123456789',
                 usuarioCredencial: 'JUAN PEREZ',
                 rutCredencial: '987654321-0'
             }
-            
+
 
             const clienteDocId = await validateCliente.validationClient(caso.cliente.nombre)
             const directorDocId = await validateUsuario.validateUsuario(caso.directorACargo.nombre)
@@ -174,14 +184,14 @@ module.exports = {
             const juzgadoIntDocId = await validateJuzgado.validationJuzgado(caso.juzgadoInt.nombre)
             const abogadoIntern2DocInd = await validateUsuario.validateUsuario(caso.abogadoInternoDeLaCompania2.nombre)
             const siniestro2DocId = await validateSiniestro.validationSiniestro(caso.siniestro2.numero)
-            
+
             const pretensionesEnDinero = limpiarValorMonetario(caso.pretensionesEnDinero)
             const honorariosAsignados = limpiarValorMonetario(caso.honorariosAsignados)
             const valorIndemnizadoCliente = limpiarValorMonetario(caso.valorIndemnizadoCliente)
             const montoDeProvision = limpiarValorMonetario(caso.montoDeProvision)
             const honorariosAsignados2 = limpiarValorMonetario(caso.honorariosAsignados2)
             const valorPagado = limpiarValorMonetario(caso.valorPagado)
-            
+
 
             const usuarioCreadorDocId = caso.usuarioCreador ? await validateUsuario.validateUsuario(caso.usuarioCreador.nombre) : null
 
