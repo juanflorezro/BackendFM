@@ -29,6 +29,7 @@ module.exports = {
                             .populate('juzgado')
                             .populate('usuarioCreador')
                             .populate('usuariosInvolucrados')
+                            .populate('juzgadoInt')
                         res.json(casos)
                     } catch (error) {
                         res.status(500).json({ message: error.message })
@@ -61,8 +62,10 @@ module.exports = {
                     .populate('abogadoInternoDeLaCompania')
                     .populate('siniestro')
                     .populate('juzgado')
+                    .populate('juzgadoInt')
                     .populate('usuarioCreador')
                     .populate('usuariosInvolucrados')
+                    
                 res.json(casos)
 
             } catch (error) {
@@ -184,7 +187,8 @@ module.exports = {
             const juzgadoIntDocId = await validateJuzgado.validationJuzgado(caso.juzgadoInt.nombre)
             const abogadoIntern2DocInd = await validateUsuario.validateUsuario(caso.abogadoInternoDeLaCompania2.nombre)
             const siniestro2DocId = await validateSiniestro.validationSiniestro(caso.siniestro2.numero)
-
+            console.log(juzgadoIntDocId)
+            console.log('hoka comon esvdhsvhs')
             const pretensionesEnDinero = limpiarValorMonetario(caso.pretensionesEnDinero)
             const honorariosAsignados = limpiarValorMonetario(caso.honorariosAsignados)
             const valorIndemnizadoCliente = limpiarValorMonetario(caso.valorIndemnizadoCliente)

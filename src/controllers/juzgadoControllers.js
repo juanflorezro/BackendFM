@@ -7,7 +7,7 @@ async function validationJuzgado(nombre) {
             juzgadoDoc = new Juzgado({ nombre })
             await juzgadoDoc.save()
         }
-        return juzgadoDoc
+        return juzgadoDoc._id
     } catch (error) {
         throw error
     }

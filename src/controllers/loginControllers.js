@@ -32,8 +32,8 @@ module.exports = {
     },
     validacion: async (req,res) => {
         const token = req.headers['authorization']
-        const acesso = await validationJWT(JSON.parse(token)).catch(()=>{}) //catch terminar la promesa no BORRAR
-        
+        const acesso = await validationJWT(JSON.parse(token)).catch((err)=>{console.log(err)}) //catch terminar la promesa no BORRAR
+        console.log(acesso, '   ', token)
         if(acesso){
             res.status(201).json({message: 'acceso permitido', user: acesso})
         }else {
