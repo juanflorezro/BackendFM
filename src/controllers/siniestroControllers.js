@@ -7,7 +7,7 @@ async function validationSiniestro(numero) {
             siniestroDoc = new Siniestro({ numero })
             await siniestroDoc.save()
         }
-        return siniestroDoc
+        return siniestroDoc._id
     } catch (error) {
         throw error
     }
@@ -42,7 +42,7 @@ module.exports = {
     },
     actualizar: async (req, res) => {
         const siniestro = req.body
-        
+
         try {
             const { id } = req.params
             const siniestroActualizado = await Siniestro.findByIdAndUpdate(id, cliente/*req.body*/, { new: true });
