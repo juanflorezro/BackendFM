@@ -77,104 +77,7 @@ module.exports = {
     },
     agregarfijo: async (req, res) => {
         try {
-            const caso = {
-                numero: '9876543210',
-                codigo: '098765432109876543210',
-                titulo: 'ABC123 - JUAN PEREZ',
-                cliente: { nombre: 'SEGUROS LA EQUIDAD' }, // ObjectId de Cliente
-                asunto: 'Demanda por Daños y Perjuicios',
-                creacion: new Date('2023-07-15T14:30:00Z'),
-                ubicacionDelExpediente: 'CT 2007',
-                codigoInterno: 'PENAL',
-                area: 'PENAL',
-                fechaDeAsignacion: new Date('2023-08-15'),
-                centroDeTrabajo: 'BOGOTÁ',
-                directorACargo: { nombre: 'ROBERTO SANTOS' }, // ObjectId de Usuario
-                abogadoACargo: { nombre: 'LAURA MORALES' }, // ObjectId de Usuario
-                abogadoInternoDeLaCompania: { nombre: 'CARLOS LOPEZ' }, // ObjectId de Usuario
-                siniestro: { numero: '987654321098' }, // ObjectId de Siniestro
-                fechaSiniestro: new Date('2022-03-11'),
-                poliza: '9876543210987',
-                ramo: 'VIDA',
-                amparo: 'INDEMNIZACIÓN POR ACCIDENTES PERSONALES',
-                numeroAplicativo: '321',
-                ciudad: 'BOGOTÁ',
-                juzgadoInt: { nombre: 'JUZGADO 5 CIVIL MUNICIPAL DE BOGOTÁ' }, // ObjectId de Juzgado
-                radicado: 'RAD9876543210',
-                parteActiva: 'JUAN PEREZ',
-                partePasiva: 'CARLOS MARTINEZ Y OTROS',
-                tipoDeTramite: 'DEMANDA',
-                claseDeProceso: 'PROCESO VERBAL',
-                tipoDeVinculacionCliente: 'DIRECTO',
-                pretensionesEnDinero: 2000000000,
-                calificacionInicialContingencia: 'POSIBLE',
-                calificacionActualContingencia: 'REMOTA',
-                motivoDeLaCalificacion: 'Falta de pruebas contundentes.',
-                fechaAdmisionVinculacion: new Date('2023-07-15'),
-                fechaDeNotificacion: new Date('2023-07-20'),
-                instancia: 'SEGUNDA INSTANCIA',
-                etapaProcesal: 'JUICIO ORAL',
-                claseDeMedidaCautelar: 'INHIBICIÓN DE BIENES',
-                honorariosAsignados: 70000000,
-                autoridadDeConocimiento: 'JUZGADO 20 PENAL DEL CIRCUITO',
-                delito: 'DAÑOS Y PERJUICIOS',
-                placa: 'ABC123',
-                evento: 'L2',
-                probabilidadDeExito: 'MEDIA',
-                valorIndemnizadoCliente: 700000000,
-                entidadAfectada: 'N/A',
-                fechaDePagoCliente: new Date('2023-08-05'),
-                tipoContragarantia: 'GARANTÍA REAL',
-                montoDeProvision: 150000000,
-                tipoDeMoneda: 'Peso',
-                fechaDeTerminacion: new Date('2024-02-01'),
-                motivoDeTerminacion: 'FALLO A FAVOR DEL DEMANDADO',
-                cliente2: { nombre: 'DANIEL COLON' }, // ObjectId de Cliente
-                fechaDeAsignacion2: new Date('2023-07-15'),
-                abogadoInternoDeLaCompania2: { nombre: 'JUAN DAVID' }, // ObjectId de Usuario
-                siniestro2: { numero: '123456789' }, // ObjectId de Siniestro
-                numeroDeAplicativo2: 'N/A',
-                fechaDeNotificacion2: new Date('2023-07-15'),
-                seInicioEjecutivoAContinuacionDeOrdinario: false,
-                honorariosAsignados2: 60000000,
-                valorPagado: 600000000,
-                personaQueRealizoElPago: 'JUAN PEREZ',
-                fechaDeRadicacionDeLaContestacion: new Date('2023-08-01'),
-                fechaDeRadicacionDeLaContestacion2: new Date('2023-08-01'),
-                departamento: 'CUNDINAMARCA',
-                asegurado: 'JUAN PEREZ',
-                jurisdiccion: 'Penal',
-                materia: 'ACTIVO',
-                detalleDeMateria: 'JUZGADO PENAL',
-                estado: 'En proceso',
-                estadoInterno: 'Activo',
-                juzgado: { nombre: 'Juzgado Penal Municipal de Bogotá' }, // ObjectId de Juzgado
-                moneda: 'Peso',
-                cuantia: 2000000000,
-                contingenciaReal: 1500000000,
-                provision: 150000000,
-                condenaArreglo: 300000000,
-                totalComisiones: 60000000,
-                totalRecaudacion: 30000000,
-                totalGastos: 90000000,
-                fechaInicio: new Date('2023-07-15'),
-                fechaTermino: new Date('2024-02-01'),
-                flujoDeTrabajo: 'RÁPIDO',
-                etapaDeFlujo: 'JUICIO',
-                primeraParteActiva: 'N/A',
-                primeraPartePasiva: 'N/A',
-                usuariosInvolucrados: '64d2c8f3e0f7e23dca1b1e91,64d2c8f3e0f7e23dca1b1e90,64d2c8f3e0f7e23dca1b1e92,64d2c8f3e0f7e23dca1b1e9g', // ObjectId de Usuario
-                ultimaTareaFinalizada: 'AUDIENCIA DE JUICIO ORAL (Aprobado por JOSE PEREZ)',
-                fechaUltimaActuacion: new Date('2024-07-15'),
-                tituloUltimaActuacion: 'DECISIÓN FINAL - JUEZ CARLOS RODRIGUEZ',
-                fechaUltimoCambioDeEstado: new Date('2024-02-01T03:00:00Z'),
-                usuarioCreador: { nombre: 'admin' }, // ObjectId de Usuario
-                notificado: 'true',
-                cartera: 'Activa',
-                numeroCredencial: '123456789',
-                usuarioCredencial: 'JUAN PEREZ',
-                rutCredencial: '987654321-0'
-            }
+            const caso = req.body.data
 
 
             const clienteDocId = await validateCliente.validationClient(caso.cliente.nombre)
@@ -187,8 +90,6 @@ module.exports = {
             const juzgadoIntDocId = await validateJuzgado.validationJuzgado(caso.juzgadoInt.nombre)
             const abogadoIntern2DocInd = await validateUsuario.validateUsuario(caso.abogadoInternoDeLaCompania2.nombre)
             const siniestro2DocId = await validateSiniestro.validationSiniestro(caso.siniestro2.numero)
-            console.log(juzgadoIntDocId)
-            console.log('hoka comon esvdhsvhs')
             const pretensionesEnDinero = limpiarValorMonetario(caso.pretensionesEnDinero)
             const honorariosAsignados = limpiarValorMonetario(caso.honorariosAsignados)
             const valorIndemnizadoCliente = limpiarValorMonetario(caso.valorIndemnizadoCliente)

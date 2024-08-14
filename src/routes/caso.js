@@ -8,7 +8,7 @@ router.get('/', casoControllers.listar);
 router.post('/caso', casoControllers.listar2); // Asegúrate de que esta ruta esté correcta
 
 // Ruta para agregar un nuevo caso
-router.get('/crear', casoControllers.agregarfijo); // Cambia de GET a POST para evitar conflictos
+router.post('/crear', casoControllers.agregarfijo); // Cambia de GET a POST para evitar conflictos
 router.post('/crearlote', casoControllers.agregarLote);
 
 // Ruta para eliminar un caso por su ID
