@@ -21,7 +21,7 @@ module.exports = {
         const acceso = await validationJWT(JSON.parse(token)).catch((err)=>(console.log(err)))
         if(acceso){
             try {
-                const clientes = await Cliente.find()  // Corrección en la variable "clientes"
+                const clientes = await Cliente.find()  
                 res.json(clientes)
             } catch (error) {
                 res.status(500).json({ message: error.message })

@@ -26,10 +26,12 @@ module.exports = {
                             .populate('abogadoACargo')
                             .populate('abogadoInternoDeLaCompania')
                             .populate('siniestro')
-                            .populate('juzgado')
-                            .populate('usuarioCreador')
-                            .populate('usuariosInvolucrados')
                             .populate('juzgadoInt')
+                            .populate('cliente2')
+                            .populate('abogadoInternoDeLaCompania2')
+                            .populate('siniestro2')
+                            .populate('juzgado')
+                        console.log(casos)
                         res.json(casos)
                     } catch (error) {
                         res.status(500).json({ message: error.message })
@@ -61,10 +63,11 @@ module.exports = {
                     .populate('abogadoACargo')
                     .populate('abogadoInternoDeLaCompania')
                     .populate('siniestro')
-                    .populate('juzgado')
                     .populate('juzgadoInt')
-                    .populate('usuarioCreador')
-                    .populate('usuariosInvolucrados')
+                    .populate('cliente2')
+                    .populate('abogadoInternoDeLaCompania2')
+                    .populate('siniestro2')
+                    .populate('juzgado')
 
                 res.json(casos)
 
@@ -84,28 +87,27 @@ module.exports = {
                 if (acceso) {
                     try {
                         const caso = req.body.data
-            
-            
-                        const clienteDocId = await validateCliente.validationClient(caso.cliente.nombre)
-                        const directorDocId = await validateUsuario.validateUsuario(caso.directorACargo.nombre)
-                        const abogadoDocId = await validateUsuario.validateUsuario(caso.abogadoACargo.nombre)
-                        const abogadoInternoDocId = await validateUsuario.validateUsuario(caso.abogadoInternoDeLaCompania.nombre)
-                        const cliente2DocInt = await validateUsuario.validateUsuario(caso.cliente2.nombre)
-                        const siniestroDocId = await validateSiniestro.validationSiniestro(caso.siniestro.numero)
-                        const juzgadoDocId = await validateJuzgado.validationJuzgado(caso.juzgado.nombre)
-                        const juzgadoIntDocId = await validateJuzgado.validationJuzgado(caso.juzgadoInt.nombre)
-                        const abogadoIntern2DocInd = await validateUsuario.validateUsuario(caso.abogadoInternoDeLaCompania2.nombre)
-                        const siniestro2DocId = await validateSiniestro.validationSiniestro(caso.siniestro2.numero)
-                        const pretensionesEnDinero = limpiarValorMonetario(caso.pretensionesEnDinero)
-                        const honorariosAsignados = limpiarValorMonetario(caso.honorariosAsignados)
-                        const valorIndemnizadoCliente = limpiarValorMonetario(caso.valorIndemnizadoCliente)
-                        const montoDeProvision = limpiarValorMonetario(caso.montoDeProvision)
-                        const honorariosAsignados2 = limpiarValorMonetario(caso.honorariosAsignados2)
-                        const valorPagado = limpiarValorMonetario(caso.valorPagado)
-            
-            
-                        const usuarioCreadorDocId = caso.usuarioCreador ? await validateUsuario.validateUsuario(caso.usuarioCreador.nombre) : null
-            
+                        console.log(caso)
+
+                        const clienteDocId = caso.cliente?.nombre ? await validateCliente.validationClient(caso.cliente.nombre) : null;
+                        const directorDocId = caso.directorACargo?.nombre ? await validateUsuario.validateUsuario(caso.directorACargo.nombre) : null;
+                        const abogadoDocId = caso.abogadoACargo?.nombre ? await validateUsuario.validateUsuario(caso.abogadoACargo.nombre) : null;
+                        const abogadoInternoDocId = caso.abogadoInternoDeLaCompania?.nombre ? await validateUsuario.validateUsuario(caso.abogadoInternoDeLaCompania.nombre) : null;
+                        const siniestroDocId = caso.siniestro?.numero ? await validateSiniestro.validationSiniestro(caso.siniestro.numero) : null;
+                        const juzgadoIntDocId = caso.juzgadoInt?.nombre ? await validateJuzgado.validationJuzgado(caso.juzgadoInt.nombre) : null;
+                        const cliente2DocInt = caso.cliente2?.nombre ? await validateUsuario.validateUsuario(caso.cliente2.nombre) : null;
+                        const abogadoIntern2DocInd = caso.abogadoInternoDeLaCompania2?.nombre ? await validateUsuario.validateUsuario(caso.abogadoInternoDeLaCompania2.nombre) : null;
+                        const siniestro2DocId = caso.siniestro2?.numero ? await validateSiniestro.validationSiniestro(caso.siniestro2.numero) : null;
+                        const juzgadoDocId = caso.juzgado?.nombre ? await validateJuzgado.validationJuzgado(caso.juzgado.nombre) : null;
+
+                        // Limpiar valores monetarios y otros valores opcionales
+                        const honorariosAsignados = limpiarValorMonetario(caso.honorariosAsignados) || null;
+                       
+                       // const honorariosAsignados2 = limpiarValorMonetario(caso.honorariosAsignados2) || null;
+                        //const valorPagado = limpiarValorMonetario(caso.valorPagado) || null;
+
+
+
                         const nuevoCaso = new Caso({
                             ...caso,
                             cliente: clienteDocId,
@@ -115,26 +117,20 @@ module.exports = {
                             juzgadoInt: juzgadoIntDocId,
                             siniestro: siniestroDocId,
                             juzgado: juzgadoDocId,
-                            usuarioCreador: usuarioCreadorDocId,
                             cliente2: cliente2DocInt,
                             abogadoInternoDeLaCompania2: abogadoIntern2DocInd,
                             siniestro2: siniestro2DocId,
-                            pretensionesEnDinero,
                             honorariosAsignados,
-                            valorIndemnizadoCliente,
-                            montoDeProvision,
-                            honorariosAsignados2,
-                            valorPagado
                         })
-            
+
                         const casoGuardado = await nuevoCaso.save()
                         console.log('casoInsertado', casoGuardado._id)
-            
+
                         res.status(201).json(casoGuardado)
                     } catch (error) {
                         res.status(500).json({ message: error.message })
                     }
-                       
+
                 } else {
                     res.status(500).json({ message: 'Acceso Denegado' })
                 }
@@ -144,8 +140,8 @@ module.exports = {
         } else {
             res.status(500).json({ message: 'Acceso Denegado' })
         }
-        
-        
+
+
     },
     agregarLote: async (req, res) => {
 
