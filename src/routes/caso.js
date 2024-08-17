@@ -6,6 +6,7 @@ router.get('/', casoControllers.listar);
 
 // Ruta para ver un caso específico
 router.post('/caso', casoControllers.listar2); // Asegúrate de que esta ruta esté correcta
+router.post('/casoAll', casoControllers.listar3); // Asegúrate de que esta ruta esté correcta
 
 // Ruta para agregar un nuevo caso
 router.post('/crear', casoControllers.agregarfijo); // Cambia de GET a POST para evitar conflictos

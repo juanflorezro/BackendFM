@@ -78,6 +78,122 @@ module.exports = {
             res.status(500).json({ message: 'Acceso Denegado' })
         }
     },
+    listar3: async (req, res) => {
+        const data = req.body.data
+        const token = req.headers['authorization']
+        console.log(data)
+
+        const acceso = await validationJWT(JSON.parse(token)).catch((err) => (console.log(err)))
+        if (acceso) {
+
+            try {
+                const regex = new RegExp(data, 'i');
+            
+                // Búsqueda en campos simples
+                const resultadosSimples = await Caso.find({
+                  $or: [
+                    { numero: regex },
+                    { codigo: regex },
+                    { titulo: regex },
+                    { asunto: regex },
+                    { area: regex },
+                    { centroDeTrabajo: regex },
+                    { poliza: regex },
+                    { ramo: regex },
+                    { amparo: regex },
+                    { numeroAplicativo: regex },
+                    { ciudad: regex },
+                    { radicado: regex },
+                    { parteActiva: regex },
+                    { partePasiva: regex },
+                    { tipoDeTramite: regex },
+                    { claseDeProceso: regex },
+                    { tipoDeVinculacionCliente: regex },
+                    { pretensionesEnDinero: regex },
+                    { calificacionInicialContingencia: regex },
+                    { calificacionActualContingencia: regex },
+                    { motivoDeLaCalificacion: regex },
+                    { instancia: regex },
+                    { etapaProcesal: regex },
+                    { claseDeMedidaCautelar: regex },
+                    { honorariosAsignados: regex },
+                    { autoridadDeConocimiento: regex },
+                    { delito: regex },
+                    { placa: regex },
+                    { evento: regex },
+                    { probabilidadDeExito: regex },
+                    { valorIndemnizadoCliente: regex },
+                    { entidadAfectada: regex },
+                    { tipoContragarantia: regex },
+                    { montoDeProvision: regex },
+                    { tipoDeMoneda: regex },
+                    { motivoDeTerminacion: regex },
+                    { seInicioEjecutivoAContinuacionDeOrdinario: regex },
+                    { honorariosAsignados2: regex },
+                    { valorPagado: regex },
+                    { personaQueRealizoElPago: regex },
+                    { departamento: regex },
+                    { asegurado: regex },
+                    { jurisdiccion: regex },
+                    { tituloUltimaActuacion: regex },
+                  ]
+                }).select('_i')
+                const casosSimplesIds = resultadosSimples.map(caso => caso._id)
+
+                
+            
+                // Búsqueda en colecciones referenciadas
+                const clientes = await Cliente.find({ nombre: regex });
+                const clienteIds = clientes.map(cliente => cliente._id);
+            
+                const usuarios = await Usuario.find({ nombre: regex });
+                const usuarioIds = usuarios.map(usuario => usuario._id);
+            
+                const siniestros = await Siniestro.find({ numero: regex });
+                const siniestroIds = siniestros.map(siniestro => siniestro._id);
+            
+                const juzgados = await Juzgado.find({ nombre: regex });
+                const juzgadoIds = juzgados.map(juzgado => juzgado._id);
+            
+                const resultadosCombinados = await Caso.find({
+                  $or: [
+                    { cliente: { $in: clienteIds } },
+                    { directorACargo: { $in: usuarioIds } },
+                    { abogadoACargo: { $in: usuarioIds } },
+                    { abogadoInternoDeLaCompania: { $in: usuarioIds } },
+                    { siniestro: { $in: siniestroIds } },
+                    { juzgadoInt: { $in: juzgadoIds } },
+                    { cliente2: { $in: clienteIds } },
+                    { abogadoInternoDeLaCompania2: { $in: usuarioIds } },
+                    { siniestro2: { $in: siniestroIds } },
+                    { juzgado: { $in: juzgadoIds } },
+                  ]
+                }).select('_id')
+
+                const casosReferenciadosIds = resultadosCombinados.map(caso => caso._id)
+                const todosLosIds = new Set([...casosSimplesIds, ...casosReferenciadosIds])
+                const casosFinales = await Caso.find({ _id: { $in: Array.from(todosLosIds) } })
+                .populate('cliente')
+                .populate('directorACargo')
+                .populate('abogadoACargo')
+                .populate('abogadoInternoDeLaCompania')
+                .populate('siniestro')
+                .populate('juzgadoInt')
+                .populate('cliente2')
+                .populate('abogadoInternoDeLaCompania2')
+                .populate('siniestro2')
+                .populate('juzgado')
+
+                
+            
+                res.json(casosFinales)
+              } catch (error) {
+                res.status(500).json({ message: 'Error en la búsqueda de casos', error });
+              }
+        } else {
+            res.status(500).json({ message: 'Acceso Denegado' })
+        }
+    },
     agregarfijo: async (req, res) => {
         const token = req.headers['authorization']
         const caso = req.body.data
