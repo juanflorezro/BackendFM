@@ -31,7 +31,6 @@ module.exports = {
                             .populate('abogadoInternoDeLaCompania2')
                             .populate('siniestro2')
                             .populate('juzgado')
-                        console.log(casos)
                         res.json(casos)
                     } catch (error) {
                         res.status(500).json({ message: error.message })
@@ -51,7 +50,7 @@ module.exports = {
     listar2: async (req, res) => {
         const data = req.body.data
         const token = req.headers['authorization']
-        console.log(data)
+       
 
         const acceso = await validationJWT(JSON.parse(token)).catch((err) => (console.log(err)))
         if (acceso) {
@@ -81,7 +80,7 @@ module.exports = {
     listar3: async (req, res) => {
         const data = req.body.data
         const token = req.headers['authorization']
-        console.log(data)
+        
 
         const acceso = await validationJWT(JSON.parse(token)).catch((err) => (console.log(err)))
         if (acceso) {
@@ -203,7 +202,7 @@ module.exports = {
                 if (acceso) {
                     try {
                         const caso = req.body.data
-                        console.log(caso)
+                        
 
                         const clienteDocId = caso.cliente?.nombre ? await validateCliente.validationClient(caso.cliente.nombre) : null;
                         const directorDocId = caso.directorACargo?.nombre ? await validateUsuario.validateUsuario(caso.directorACargo.nombre) : null;
@@ -341,16 +340,33 @@ module.exports = {
 
     },
     eliminar: async (req, res) => {
-        try {
-            const { id } = req.params
-            const casoEliminado = await Caso.findByIdAndDelete(id)
-            if (!casoEliminado) return res.status(404).json({ message: 'Caso no encontrado' })
-            res.json({ message: 'Caso eliminado exitosamente' })
-        } catch (error) {
-            res.status(500).json({ message: error.message })
+        const token = req.headers['authorization']
+
+        if (token) {
+            try {
+                const acceso = await validationJWT(JSON.parse(token)).catch((err) => (console.log(err)))
+                if (acceso) {
+                    try {
+                        const { id } = req.params
+                        const casoEliminado = await Caso.findByIdAndDelete(id)
+                        if (!casoEliminado) return res.status(404).json({ message: 'Caso no encontrado' })
+                        res.json({ message: 'Caso eliminado exitosamente' })
+                    } catch (error) {
+                        res.status(500).json({ message: error.message })
+                    }
+                } else {
+                    res.status(500).json({ message: 'Acceso Denegado' })
+                }
+            } catch (error) {
+                res.status(500).json({ message: error.message })
+            }
+        } else {
+            res.status(500).json({ message: 'Acceso Denegado' })
         }
+        
     },
     eliminarTodos: async (req, res) => {
+        
         try {
             await Caso.deleteMany({})
             await Cliente.deleteMany({})
