@@ -1,4 +1,10 @@
 const mongoose = require('mongoose')
+const comentarioSchema = new mongoose.Schema({
+  texto: { type: String},
+  fecha: { type: String },
+  usuario: {type: String},
+  hora: {type: String}
+})
 
 const casoSchema = new mongoose.Schema({
   numero: { type: String},
@@ -67,6 +73,7 @@ const casoSchema = new mongoose.Schema({
   juzgado: { type: mongoose.Schema.Types.ObjectId, ref: 'Juzgado' },
   fechaUltimaActuacion: { type: Date },
   tituloUltimaActuacion: { type: String },
+  comentarios: [comentarioSchema]
 })
 
 module.exports = mongoose.model('Caso', casoSchema)

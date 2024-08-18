@@ -14,9 +14,10 @@ router.post('/crearlote', casoControllers.agregarLote);
 
 // Ruta para eliminar un caso por su ID
 router.delete('/eliminar/:id', casoControllers.eliminar);
+router.delete('/:casoId/comentarios/:comentarioId', casoControllers.eliminarc);
 
 // Ruta para actualizar un caso por su ID
-router.put('/actualizar/:id', casoControllers.actualizar);
+router.post('/actualizar/:id', casoControllers.actualizar);
 router.get('/eli', casoControllers.eliminarTodos);
 
 // Ruta para actualizar un caso por su ID
