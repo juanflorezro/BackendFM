@@ -216,7 +216,7 @@ module.exports = {
                         const juzgadoDocId = caso.juzgado?.nombre ? await validateJuzgado.validationJuzgado(caso.juzgado.nombre) : null;
 
                         // Limpiar valores monetarios y otros valores opcionales
-                        const honorariosAsignados = limpiarValorMonetario(caso.honorariosAsignados) || null;
+                        //const honorariosAsignados = limpiarValorMonetario(caso.honorariosAsignados) || null;
 
                         // const honorariosAsignados2 = limpiarValorMonetario(caso.honorariosAsignados2) || null;
                         //const valorPagado = limpiarValorMonetario(caso.valorPagado) || null;
@@ -235,7 +235,6 @@ module.exports = {
                             cliente2: cliente2DocInt,
                             abogadoInternoDeLaCompania2: abogadoIntern2DocInd,
                             siniestro2: siniestro2DocId,
-                            honorariosAsignados,
                         })
 
                         const casoGuardado = await nuevoCaso.save()
