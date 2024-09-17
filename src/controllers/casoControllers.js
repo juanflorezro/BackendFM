@@ -245,18 +245,8 @@ module.exports = {
     },
     listarUnique: async (req, res) => {
         const data = req.body.data
-        const token = req.headers['authorization']
-
-        if (!token) {
-            return res.status(401).json({ message: 'Acceso Denegado' });
-        }
 
         try {
-            const acceso = await validationJWT(JSON.parse(token));
-
-            if (!acceso) {
-                return res.status(403).json({ message: 'Acceso Denegado' });
-            }
 
             const areas = await Caso.distinct('area')
             const centrosDeTrabajo = await Caso.distinct('centroDeTrabajo');
