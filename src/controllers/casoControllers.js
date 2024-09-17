@@ -13,184 +13,306 @@ const siniestro = require('../models/siniestro')
 
 module.exports = {
     listar: async (req, res) => {
+        const { page = 1, limit = 5 } = req.query
+        const { coincidencias } = req.query
+        const filtro = req.body.data
         const token = req.headers['authorization']
+        if (!token) {
+            return res.status(401).json({ message: 'Acceso Denegado' });
+        }
 
-        if (token) {
-            try {
-                const acceso = await validationJWT(JSON.parse(token)).catch((err) => (console.log(err)))
-                if (acceso) {
-                    try {
-                        const casos = await Caso.find()
-                            .populate('cliente')
-                            .populate('directorACargo')
-                            .populate('abogadoACargo')
-                            .populate('abogadoInternoDeLaCompania')
-                            .populate('siniestro')
-                            .populate('juzgadoInt')
-                            .populate('cliente2')
-                            .populate('abogadoInternoDeLaCompania2')
-                            .populate('siniestro2')
-                            .populate('juzgado')
-                        res.json(casos)
-                    } catch (error) {
-                        res.status(500).json({ message: error.message })
-                    }
+        try {
+            const acceso = await validationJWT(JSON.parse(token));
+
+            if (!acceso) {
+                return res.status(403).json({ message: 'Acceso Denegado' });
+            }
+
+            if (filtro) {
+                const casos = await Caso.find(filtro)
+                    .skip((page - 1) * limit)
+                    .limit(limit)
+                    .populate('cliente abogadoACargo')
+
+                const total = await Caso.countDocuments(filtro)
+                return res.status(200).json({
+                    data: casos,
+                    totalPages: Math.ceil(total / limit),
+                    currentPage: parseInt(page),
+                    totalCasos: total,
+                })
+            } else {
+                if (coincidencias == '' || coincidencias == ' ') {
+                    const regex = new RegExp(coincidencias, 'i')
+                    console.log('entrando')
+                    // Búsqueda en campos simples
+                    const resultadosSimples = await Caso.find({
+                        $or: [
+                            { numero: regex },
+                            { codigo: regex },
+                            { titulo: regex },
+                            { asunto: regex },
+                            { area: regex },
+                            { centroDeTrabajo: regex },
+                            { poliza: regex },
+                            { ramo: regex },
+                            { amparo: regex },
+                            { numeroAplicativo: regex },
+                            { ciudad: regex },
+                            { radicado: regex },
+                            { parteActiva: regex },
+                            { partePasiva: regex },
+                            { tipoDeTramite: regex },
+                            { claseDeProceso: regex },
+                            { tipoDeVinculacionCliente: regex },
+                            { pretensionesEnDinero: regex },
+                            { calificacionInicialContingencia: regex },
+                            { calificacionActualContingencia: regex },
+                            { motivoDeLaCalificacion: regex },
+                            { instancia: regex },
+                            { etapaProcesal: regex },
+                            { claseDeMedidaCautelar: regex },
+                            { honorariosAsignados: regex },
+                            { autoridadDeConocimiento: regex },
+                            { delito: regex },
+                            { placa: regex },
+                            { evento: regex },
+                            { probabilidadDeExito: regex },
+                            { valorIndemnizadoCliente: regex },
+                            { entidadAfectada: regex },
+                            { tipoContragarantia: regex },
+                            { montoDeProvision: regex },
+                            { tipoDeMoneda: regex },
+                            { motivoDeTerminacion: regex },
+                            { seInicioEjecutivoAContinuacionDeOrdinario: regex },
+                            { honorariosAsignados2: regex },
+                            { valorPagado: regex },
+                            { personaQueRealizoElPago: regex },
+                            { departamento: regex },
+                            { asegurado: regex },
+                            { jurisdiccion: regex },
+                            { tituloUltimaActuacion: regex },
+                        ]
+                    })
+                        .skip((page - 1) * limit)
+                        .limit(parseInt(limit))
+                        .select('_i')
+
+                    const casosSimplesIds = resultadosSimples.map(caso => caso._id)
+                    // Búsqueda en colecciones referenciadas
+                    const clientes = await Cliente.find({ nombre: regex })
+                    const clienteIds = clientes.map(cliente => cliente._id)
+                    const usuarios = await Usuario.find({ nombre: regex })
+                    const usuarioIds = usuarios.map(usuario => usuario._id)
+                    const siniestros = await Siniestro.find({ numero: regex })
+                    const siniestroIds = siniestros.map(siniestro => siniestro._id)
+                    const juzgados = await Juzgado.find({ nombre: regex })
+                    const juzgadoIds = juzgados.map(juzgado => juzgado._id)
+
+                    const resultadosCombinados = await Caso.find({
+                        $or: [
+                            { cliente: { $in: clienteIds } },
+                            { directorACargo: { $in: usuarioIds } },
+                            { abogadoACargo: { $in: usuarioIds } },
+                            { abogadoInternoDeLaCompania: { $in: usuarioIds } },
+                            { siniestro: { $in: siniestroIds } },
+                            { juzgadoInt: { $in: juzgadoIds } },
+                            { cliente2: { $in: clienteIds } },
+                            { abogadoInternoDeLaCompania2: { $in: usuarioIds } },
+                            { siniestro2: { $in: siniestroIds } },
+                            { juzgado: { $in: juzgadoIds } },
+                        ]
+                    })
+                        .skip((page - 1) * limit)
+                        .limit(parseInt(limit))
+                        .select('_id')
+
+                    const casosReferenciadosIds = resultadosCombinados.map(caso => caso._id)
+                    const todosLosIds = new Set([...casosSimplesIds, ...casosReferenciadosIds])
+                    const casosFinales = await Caso.find()
+                        .skip((page - 1) * limit)
+                        .limit(parseInt(limit))
+                        .populate('cliente abogadoACargo')
+                    const total = await Caso.countDocuments()
+                    return res.status(200).json({
+                        data: casosFinales,
+                        totalPages: Math.ceil(total / limit),
+                        currentPage: parseInt(page),
+                        totalCasos: total,
+                    });
+
                 } else {
-                    res.status(500).json({ message: 'Acceso Denegado' })
+                    const regex = new RegExp(coincidencias, 'i')
+
+                    // Búsqueda en campos simples
+                    const resultadosSimples = await Caso.find({
+                        $or: [
+                            { numero: regex },
+                            { codigo: regex },
+                            { titulo: regex },
+                            { asunto: regex },
+                            { area: regex },
+                            { centroDeTrabajo: regex },
+                            { poliza: regex },
+                            { ramo: regex },
+                            { amparo: regex },
+                            { numeroAplicativo: regex },
+                            { ciudad: regex },
+                            { radicado: regex },
+                            { parteActiva: regex },
+                            { partePasiva: regex },
+                            { tipoDeTramite: regex },
+                            { claseDeProceso: regex },
+                            { tipoDeVinculacionCliente: regex },
+                            { pretensionesEnDinero: regex },
+                            { calificacionInicialContingencia: regex },
+                            { calificacionActualContingencia: regex },
+                            { motivoDeLaCalificacion: regex },
+                            { instancia: regex },
+                            { etapaProcesal: regex },
+                            { claseDeMedidaCautelar: regex },
+                            { honorariosAsignados: regex },
+                            { autoridadDeConocimiento: regex },
+                            { delito: regex },
+                            { placa: regex },
+                            { evento: regex },
+                            { probabilidadDeExito: regex },
+                            { valorIndemnizadoCliente: regex },
+                            { entidadAfectada: regex },
+                            { tipoContragarantia: regex },
+                            { montoDeProvision: regex },
+                            { tipoDeMoneda: regex },
+                            { motivoDeTerminacion: regex },
+                            { seInicioEjecutivoAContinuacionDeOrdinario: regex },
+                            { honorariosAsignados2: regex },
+                            { valorPagado: regex },
+                            { personaQueRealizoElPago: regex },
+                            { departamento: regex },
+                            { asegurado: regex },
+                            { jurisdiccion: regex },
+                            { tituloUltimaActuacion: regex },
+                        ]
+                    })
+                        .select('_i')
+
+                    const casosSimplesIds = resultadosSimples.map(caso => caso._id)
+                    // Búsqueda en colecciones referenciadas
+                    const clientes = await Cliente.find({ nombre: regex })
+                    const clienteIds = clientes.map(cliente => cliente._id)
+                    const usuarios = await Usuario.find({ nombre: regex })
+                    const usuarioIds = usuarios.map(usuario => usuario._id)
+                    const siniestros = await Siniestro.find({ numero: regex })
+                    const siniestroIds = siniestros.map(siniestro => siniestro._id)
+                    const juzgados = await Juzgado.find({ nombre: regex })
+                    const juzgadoIds = juzgados.map(juzgado => juzgado._id)
+
+                    const resultadosCombinados = await Caso.find({
+                        $or: [
+                            { cliente: { $in: clienteIds } },
+                            { directorACargo: { $in: usuarioIds } },
+                            { abogadoACargo: { $in: usuarioIds } },
+                            { abogadoInternoDeLaCompania: { $in: usuarioIds } },
+                            { siniestro: { $in: siniestroIds } },
+                            { juzgadoInt: { $in: juzgadoIds } },
+                            { cliente2: { $in: clienteIds } },
+                            { abogadoInternoDeLaCompania2: { $in: usuarioIds } },
+                            { siniestro2: { $in: siniestroIds } },
+                            { juzgado: { $in: juzgadoIds } },
+                        ]
+                    })
+                        .select('_id')
+
+                    const casosReferenciadosIds = resultadosCombinados.map(caso => caso._id)
+                    const todosLosIds = new Set([...casosSimplesIds, ...casosReferenciadosIds])
+                    const casosFinales = await Caso.find({ _id: { $in: Array.from(todosLosIds) } })
+                        .skip((page - 1) * limit)
+                        .limit(parseInt(limit))
+                        .populate('cliente abogadoACargo')
+                    const total = await Caso.countDocuments({ _id: { $in: Array.from(todosLosIds) } })
+                    return res.status(200).json({
+                        data: casosFinales,
+                        totalPages: Math.ceil(total / limit),
+                        currentPage: parseInt(page),
+                        totalCasos: total,
+                    });
                 }
-            } catch (error) {
-                res.status(500).json({ message: error.message })
             }
-        } else {
-            res.status(500).json({ message: 'Acceso Denegado' })
+
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: error.message });
         }
-
-
     },
-    listar2: async (req, res) => {
+    listarUnique: async (req, res) => {
         const data = req.body.data
         const token = req.headers['authorization']
 
+        if (!token) {
+            return res.status(401).json({ message: 'Acceso Denegado' });
+        }
 
-        const acceso = await validationJWT(JSON.parse(token)).catch((err) => (console.log(err)))
-        if (acceso) {
+        try {
+            const acceso = await validationJWT(JSON.parse(token));
 
-            try {
-                const casos = await Caso.find(data)
-                    .populate('cliente')
-                    .populate('directorACargo')
-                    .populate('abogadoACargo')
-                    .populate('abogadoInternoDeLaCompania')
-                    .populate('siniestro')
-                    .populate('juzgadoInt')
-                    .populate('cliente2')
-                    .populate('abogadoInternoDeLaCompania2')
-                    .populate('siniestro2')
-                    .populate('juzgado')
-
-                res.json(casos)
-
-            } catch (error) {
-                res.status(500).json({ message: error.message })
+            if (!acceso) {
+                return res.status(403).json({ message: 'Acceso Denegado' });
             }
-        } else {
-            res.status(500).json({ message: 'Acceso Denegado' })
+
+            const areas = await Caso.distinct('area')
+            const centrosDeTrabajo = await Caso.distinct('centroDeTrabajo');
+            const clasesDeProceso = await Caso.distinct('claseDeProceso')
+            const ciudades = await Caso.distinct('ciudad')
+            const clientes = await Cliente.find()
+            const abogadoACargoIds = await Caso.distinct('abogadoACargo')
+            const abogadosACargo = await Usuario.find({ _id: { $in: abogadoACargoIds } })
+
+            res.json({
+                clientes,
+                areas,
+                centrosDeTrabajo,
+                clasesDeProceso,
+                abogadosACargo,
+                ciudades,
+
+            })
+        } catch (error) {
+            res.status(500).json({ message: error.message })
         }
     },
-    listar3: async (req, res) => {
-        const data = req.body.data
+    listarIdcaso: async (req, res) => {
+        const { id } = req.params
         const token = req.headers['authorization']
+        if (!token) {
+            return res.status(401).json({ message: 'Acceso Denegado' });
+        }
+        try {
+             const acceso = await validationJWT(JSON.parse(token));
+     
+             if (!acceso) {
+                 return res.status(403).json({ message: 'Acceso Denegado' });
+             }
 
+            const caso = await Caso.findById(id)
+                .populate('cliente')
+                .populate('directorACargo')
+                .populate('abogadoACargo')
+                .populate('abogadoInternoDeLaCompania')
+                .populate('siniestro')
+                .populate('juzgadoInt')
+                .populate('cliente2')
+                .populate('abogadoInternoDeLaCompania2')
+                .populate('siniestro2')
+                .populate('juzgado')
 
-        const acceso = await validationJWT(JSON.parse(token)).catch((err) => (console.log(err)))
-        if (acceso) {
+            if (!caso) return res.status(404).json({ message: ' Caso no encontrado' })
 
-            try {
-                const regex = new RegExp(data, 'i');
+            res.status(200).json({
+                message: 'caso encontrado correctamente',
+                caso: caso
+            })
 
-                // Búsqueda en campos simples
-                const resultadosSimples = await Caso.find({
-                    $or: [
-                        { numero: regex },
-                        { codigo: regex },
-                        { titulo: regex },
-                        { asunto: regex },
-                        { area: regex },
-                        { centroDeTrabajo: regex },
-                        { poliza: regex },
-                        { ramo: regex },
-                        { amparo: regex },
-                        { numeroAplicativo: regex },
-                        { ciudad: regex },
-                        { radicado: regex },
-                        { parteActiva: regex },
-                        { partePasiva: regex },
-                        { tipoDeTramite: regex },
-                        { claseDeProceso: regex },
-                        { tipoDeVinculacionCliente: regex },
-                        { pretensionesEnDinero: regex },
-                        { calificacionInicialContingencia: regex },
-                        { calificacionActualContingencia: regex },
-                        { motivoDeLaCalificacion: regex },
-                        { instancia: regex },
-                        { etapaProcesal: regex },
-                        { claseDeMedidaCautelar: regex },
-                        { honorariosAsignados: regex },
-                        { autoridadDeConocimiento: regex },
-                        { delito: regex },
-                        { placa: regex },
-                        { evento: regex },
-                        { probabilidadDeExito: regex },
-                        { valorIndemnizadoCliente: regex },
-                        { entidadAfectada: regex },
-                        { tipoContragarantia: regex },
-                        { montoDeProvision: regex },
-                        { tipoDeMoneda: regex },
-                        { motivoDeTerminacion: regex },
-                        { seInicioEjecutivoAContinuacionDeOrdinario: regex },
-                        { honorariosAsignados2: regex },
-                        { valorPagado: regex },
-                        { personaQueRealizoElPago: regex },
-                        { departamento: regex },
-                        { asegurado: regex },
-                        { jurisdiccion: regex },
-                        { tituloUltimaActuacion: regex },
-                    ]
-                }).select('_i')
-                const casosSimplesIds = resultadosSimples.map(caso => caso._id)
-
-
-
-                // Búsqueda en colecciones referenciadas
-                const clientes = await Cliente.find({ nombre: regex });
-                const clienteIds = clientes.map(cliente => cliente._id);
-
-                const usuarios = await Usuario.find({ nombre: regex });
-                const usuarioIds = usuarios.map(usuario => usuario._id);
-
-                const siniestros = await Siniestro.find({ numero: regex });
-                const siniestroIds = siniestros.map(siniestro => siniestro._id);
-
-                const juzgados = await Juzgado.find({ nombre: regex });
-                const juzgadoIds = juzgados.map(juzgado => juzgado._id);
-
-                const resultadosCombinados = await Caso.find({
-                    $or: [
-                        { cliente: { $in: clienteIds } },
-                        { directorACargo: { $in: usuarioIds } },
-                        { abogadoACargo: { $in: usuarioIds } },
-                        { abogadoInternoDeLaCompania: { $in: usuarioIds } },
-                        { siniestro: { $in: siniestroIds } },
-                        { juzgadoInt: { $in: juzgadoIds } },
-                        { cliente2: { $in: clienteIds } },
-                        { abogadoInternoDeLaCompania2: { $in: usuarioIds } },
-                        { siniestro2: { $in: siniestroIds } },
-                        { juzgado: { $in: juzgadoIds } },
-                    ]
-                }).select('_id')
-
-                const casosReferenciadosIds = resultadosCombinados.map(caso => caso._id)
-                const todosLosIds = new Set([...casosSimplesIds, ...casosReferenciadosIds])
-                const casosFinales = await Caso.find({ _id: { $in: Array.from(todosLosIds) } })
-                    .populate('cliente')
-                    .populate('directorACargo')
-                    .populate('abogadoACargo')
-                    .populate('abogadoInternoDeLaCompania')
-                    .populate('siniestro')
-                    .populate('juzgadoInt')
-                    .populate('cliente2')
-                    .populate('abogadoInternoDeLaCompania2')
-                    .populate('siniestro2')
-                    .populate('juzgado')
-
-
-
-                res.json(casosFinales)
-            } catch (error) {
-                res.status(500).json({ message: 'Error en la búsqueda de casos', error });
-            }
-        } else {
-            res.status(500).json({ message: 'Acceso Denegado' })
+        } catch (error) {
+            res.status(500).json({ message: 'Error en la búsqueda de casos', error });
         }
     },
     agregarfijo: async (req, res) => {
@@ -340,7 +462,7 @@ module.exports = {
     },
     eliminar: async (req, res) => {
         const token = req.headers['authorization']
-
+        console.log('encontrado')
         if (token) {
             try {
                 const acceso = await validationJWT(JSON.parse(token)).catch((err) => (console.log(err)))
@@ -365,6 +487,7 @@ module.exports = {
 
     },
     eliminarTodos: async (req, res) => {
+        console.log('encontrado')
 
         try {
             await Caso.deleteMany({})
@@ -405,7 +528,7 @@ module.exports = {
                             // Aquí simplemente concatenamos los comentarios nuevos a los existentes
                             casoData.comentarios = [...comentariosExistentes, ...nuevosComentarios];
                         }
-                        
+
 
                         // Actualiza el caso con los nuevos datos
                         const casoActualizado = await Caso.findByIdAndUpdate(id, casoData, { new: true });
@@ -413,19 +536,9 @@ module.exports = {
                         if (!casoActualizado) {
                             return res.status(404).json({ message: 'Caso no encontrado' });
                         }
-                        const casos = await Caso.find()
-                        .populate('cliente')
-                        .populate('directorACargo')
-                        .populate('abogadoACargo')
-                        .populate('abogadoInternoDeLaCompania')
-                        .populate('siniestro')
-                        .populate('juzgadoInt')
-                        .populate('cliente2')
-                        .populate('abogadoInternoDeLaCompania2')
-                        .populate('siniestro2')
-                        .populate('juzgado')
 
-                        res.json({caso: casoActualizado,casos  });
+
+                        res.status(201).json({ caso: casoActualizado });
                     } catch (error) {
                         res.status(500).json({ message: error.message });
                     }
@@ -461,19 +574,9 @@ module.exports = {
                         // Filtra los comentarios para eliminar el que tenga el _id igual al comentarioId
                         caso.comentarios = caso.comentarios.filter(comentario => comentario._id.toString() !== comentarioId);
 
-                        await caso.save();
-                        const casos = await Caso.find()
-                            .populate('cliente')
-                            .populate('directorACargo')
-                            .populate('abogadoACargo')
-                            .populate('abogadoInternoDeLaCompania')
-                            .populate('siniestro')
-                            .populate('juzgadoInt')
-                            .populate('cliente2')
-                            .populate('abogadoInternoDeLaCompania2')
-                            .populate('siniestro2')
-                            .populate('juzgado')
-                        res.status(200).json({ message: 'Comentario eliminado con éxito', casos, caso });
+                        await caso.save()
+
+                        res.status(200).json({ message: 'Comentario eliminado con éxito', caso });
                     } catch (error) {
                         res.status(500).json({ message: error.message });
                     }
