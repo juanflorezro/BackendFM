@@ -2,20 +2,31 @@ const router = require('express').Router();
 const casoControllers = require('../controllers/casoControllers');
 
 const multer = require('multer');
+
+const fs = require('fs');
 const path = require('path');
+
+// Define la ruta del directorio de uploads
+const uploadsDir = path.join(__dirname, 'uploads');
+
+// Crea el directorio si no existe
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log('Directorio creado:', uploadsDir);
+}
 
 // Configuración de multer para almacenar el archivo temporalmente
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');  // Carpeta donde se guardarán los archivos subidos
+    cb(null, uploadsDir);  // Carpeta donde se guardarán los archivos subidos
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname)); // Nombre único para cada archivo
   }
 });
 
-// Define el middleware 'upload'
 const upload = multer({ storage: storage });
+
 
 //listar los valores unicos de cada item orientado al filtro
 
