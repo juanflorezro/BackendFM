@@ -73,6 +73,8 @@ const casoSchema = new mongoose.Schema({
   juzgado: { type: mongoose.Schema.Types.ObjectId, ref: 'Juzgado' },
   fechaUltimaActuacion: { type: String },
   tituloUltimaActuacion: { type: String },
+  fechaQueRealizoElPago: { type: String },
+  codigoInterno: { type: String },
   comentarios: [comentarioSchema]
 })
 
