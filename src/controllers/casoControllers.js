@@ -461,7 +461,7 @@ module.exports = {
             // Valida que el nombre de la hoja sea 'procesos'
             if (sheetName.toLowerCase() !== 'procesos') {
                 fs.unlinkSync(file.path); // Elimina el archivo temporal
-                return res.status(400).json({ message: 'El archivo debe contener una hoja llamada "procesos"', hoja: false });
+                return res.status(400).json({ message: 'La hoja del archivo Excel debe llamarse <b>"Procesos"</b>. Por favor, verifica y vuelve a intentar.', hoja: false });
             }
 
             // Procesa la hoja si el nombre es valido
