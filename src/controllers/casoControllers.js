@@ -835,7 +835,7 @@ module.exports = {
 
             //auqiva a vernir la logca para agregar los casos 
 
-            res.status(200).json({ message: 'Precaución \n Por favor, valida los casos obtenidos ', casos, hoja: true })
+            res.status(200).json({ message: 'Precaución Por favor, valida los casos obtenidos ', casos, hoja: true })
         } catch (error) {
             console.error(error)
             res.status(500).json({ message: 'Error al cargar los casos' })
