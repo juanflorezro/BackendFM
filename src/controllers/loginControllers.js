@@ -1,6 +1,8 @@
+const { CLAVEUSUARIO } = require('../const/globalConst')
 const Login = require('../models/login')
 const autenticationJWT = require('../security/autenticationJWT')
 const validationJWT = require('../security/validationJWT')
+const jwt = require('jsonwebtoken')
 
 module.exports = {
     listar: async (req, res) => {
@@ -33,9 +35,11 @@ module.exports = {
     validacion: async (req,res) => {
         const token = req.headers['authorization']
         const acesso = await validationJWT(JSON.parse(token)).catch((err)=>{console.log(err)}) //catch terminar la promesa no BORRAR
-       
+        
         if(acesso){
-            res.status(201).json({message: 'acceso permitido', user: acesso})
+            const usuario = jwt.sign(acesso, CLAVEUSUARIO)
+            console.log(usuario)
+            res.status(201).json({message: 'acceso permitido', user: acesso, usuario})
         }else {
             res.status(500).json({message: 'acceso denegado'})
         }
