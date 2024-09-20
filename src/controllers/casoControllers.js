@@ -13,6 +13,36 @@ const siniestro = require('../models/siniestro')
 
 const XLSX = require('xlsx')
 const fs = require('fs')
+const ExcelJS = require('exceljs');
+
+const exportToExcel = async (casos, fieldMap, res) => {
+    // Crear un nuevo libro de trabajo y hoja
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Casos');
+
+    // Crear encabezados utilizando los nombres amigables de `fieldMap`
+    const headers = Object.keys(fieldMap); // Obtiene los encabezados amigables (las claves de `fieldMap`)
+    worksheet.addRow(headers); // Añadir fila de encabezados al Excel
+
+    // Recorrer los datos de los casos y mapearlos según `fieldMap`
+    casos.forEach((caso) => {
+        const rowData = headers.map((header) => {
+            const fieldKey = fieldMap[header]; // Obtiene la clave interna usando el encabezado
+            return caso[fieldKey]; // Obtiene el valor del caso para esa clave
+        });
+        worksheet.addRow(rowData); // Añadir fila de datos al Excel
+    });
+
+    // Escribir el archivo en un Buffer
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    // Enviar el archivo como una respuesta al frontend
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=Casos.xlsx');
+    res.send(buffer); // Envía el buffer al frontend
+}
+
+
 
 module.exports = {
     listar: async (req, res) => {
@@ -310,20 +340,20 @@ module.exports = {
     },
     agregarfijo: async (req, res) => {
         const token = req.headers['authorization'];
-    
+
         if (!token) {
             return res.status(401).json({ message: 'Acceso Denegado' });
         }
-    
+
         try {
             const acceso = await validationJWT(JSON.parse(token));
             if (!acceso) {
                 return res.status(401).json({ message: 'Acceso Denegado' });
             }
-    
+
             const caso = req.body.data;
             console.log(caso.directorACargo);
-    
+
             // Realizar las consultas en paralelo
             const [
                 clienteDocId,
@@ -348,7 +378,7 @@ module.exports = {
                 caso.siniestro2 ? validateSiniestro.validationSiniestro(caso.siniestro2) : Promise.resolve(null),
                 caso.juzgado ? validateJuzgado.validationJuzgado(caso.juzgado) : Promise.resolve(null)
             ]);
-    
+
             const nuevoCaso = new Caso({
                 ...caso,
                 cliente: clienteDocId,
@@ -362,15 +392,15 @@ module.exports = {
                 abogadoInternoDeLaCompania2: abogadoIntern2DocInd,
                 siniestro2: siniestro2DocId
             });
-    
+
             const casoGuardado = await nuevoCaso.save();
             res.status(201).json(casoGuardado);
-    
+
         } catch (error) {
             console.error('Error en agregarFijo:', error.message);
             res.status(500).json({ message: error.message });
         }
-    },    
+    },
     agregarLote: async (req, res) => {
 
         const token = req.headers['authorization']
@@ -387,7 +417,7 @@ module.exports = {
                             console.log(x)
 
                             const caso = casos[x]
-                            
+
                             const clienteDocId = await validateCliente.validationClient(caso.cliente.nombre)
                             const cliente2Docid = await validateCliente.validationClient(caso.cliente2.nombre)
                             const directorDocId = await validateUsuario.validateUsuario(caso.directorACargo.nombre)
@@ -490,13 +520,13 @@ module.exports = {
                 'fecha de radicacion de la contestacion', 'fecha de radicacion de la contestacion 2',
                 'departamento', 'asegurado', 'jurisdiccion', 'juzgado', 'fecha ultima actuacion',
                 'titulo ultima actuacion', 'fecha que realizo el pago', 'codigo interno'
-              ];
-              
-            
-    
+            ];
+
+
+
             // Verifica si hay encabezados no validos
             const invalidHeaders = headers.filter(header => !validHeaders.includes(header.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")));
-            
+
             if (invalidHeaders.length > 0) {
                 fs.unlinkSync(file.path); // Elimina el archivo temporal
                 return res.status(400).json({ message: `Los siguientes encabezados no son validos: ${invalidHeaders.join(' | ')}`, hoja: false });
@@ -508,19 +538,19 @@ module.exports = {
                 if (!date || isNaN(new Date(date).getTime())) {
                     return null;
                 }
-            
+
                 const d = new Date(date);
-            
+
                 // Obtener el año, mes y día de la fecha en UTC
                 const year = d.getUTCFullYear();
                 const month = ('0' + (d.getUTCMonth() + 1)).slice(-2); // Meses son de 0 a 11
                 const day = ('0' + d.getUTCDate()).slice(-2);
-            
+
                 return `${year}-${month}-${day}`;
             };
-            
 
-            
+
+
             const excelDateToJSDate = (serial) => {
                 // Excel utiliza el 1 de enero de 1900 como el primer día.
                 const excelEpoch = new Date(1899, 11, 30); // Excel fecha base es el 30 de diciembre de 1899
@@ -611,7 +641,7 @@ module.exports = {
                     }
                     switch (header) {
                         case 'n°':
-                            caso.numero = value +'';
+                            caso.numero = value + '';
                             break;
                         case 'codigo':
                             caso.codigo = value;
@@ -818,7 +848,7 @@ module.exports = {
                             caso.codigoInterno = value;
                             break;
                     }
-                    
+
                 }
                 caso.comentarios = []
                 // Agrega el caso al array de casos
@@ -841,8 +871,189 @@ module.exports = {
             res.status(500).json({ message: 'Error al cargar los casos' })
         }
     },
+    descargarArchivo: async (req, res) => {
+        const caso = req.body.data.data
+        const columns = req.body.data.selectedDataFields
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 500;
+        console.log('cargando datos...')
+        try {
+            let query = Caso.find(caso).select(columns.join(' '))
 
+            // Aplica `.select()` solo si `columns` tiene elementos.
+            if (columns && columns.length > 0) {
+                query = query.select(columns.join(' ') + ' -_id');
+            }
 
+            // Función auxiliar para verificar si un campo está en `columns`.
+            const shouldPopulate = (field) => columns.includes(field);
+
+            // Aplica `.populate()` condicionalmente solo si el campo está en `columns`.
+            if (shouldPopulate('cliente')) query = query.populate('cliente');
+            if (shouldPopulate('directorACargo')) query = query.populate('directorACargo');
+            if (shouldPopulate('abogadoACargo')) query = query.populate('abogadoACargo');
+            if (shouldPopulate('abogadoInternoDeLaCompania')) query = query.populate('abogadoInternoDeLaCompania');
+            if (shouldPopulate('siniestro')) query = query.populate('siniestro');
+            if (shouldPopulate('juzgadoInt')) query = query.populate('juzgadoInt');
+            if (shouldPopulate('cliente2')) query = query.populate('cliente2');
+            if (shouldPopulate('abogadoInternoDeLaCompania2')) query = query.populate('abogadoInternoDeLaCompania2');
+            if (shouldPopulate('siniestro2')) query = query.populate('siniestro2');
+            if (shouldPopulate('juzgado')) query = query.populate('juzgado');
+            console.log('datos enciados')
+
+            const casos = await query.skip((page - 1) * limit).limit(limit).exec()
+            const total = await Caso.countDocuments(caso)
+            res.json({ casos, total })
+        } catch (error) {
+            console.error(error)
+            res.status(500).json({ message: error })
+        }
+
+    },
+    descargarArchivoConincidencias: async (req, res) => {
+        const { page = 1, limit = 5 } = req.query;
+        const { coincidencias } = req.query;
+        const { selectedDataFields } = req.body.data; // Campos seleccionados para exportar
+        const token = req.headers['authorization'];
+    
+        if (!token) {
+            return res.status(401).json({ message: 'Acceso Denegado' });
+        }
+    
+        try {
+            const acceso = await validationJWT(JSON.parse(token));
+            if (!acceso) {
+                return res.status(403).json({ message: 'Acceso Denegado' });
+            }
+    
+            const regex = new RegExp(coincidencias, 'i');
+    
+            // Búsqueda en campos simples
+            const resultadosSimples = await Caso.find({
+                $or: [
+                    { numero: regex },
+                    { codigo: regex },
+                    { titulo: regex },
+                    { asunto: regex },
+                    { area: regex },
+                    { centroDeTrabajo: regex },
+                    { poliza: regex },
+                    { ramo: regex },
+                    { amparo: regex },
+                    { numeroAplicativo: regex },
+                    { ciudad: regex },
+                    { radicado: regex },
+                    { parteActiva: regex },
+                    { partePasiva: regex },
+                    { tipoDeTramite: regex },
+                    { claseDeProceso: regex },
+                    { tipoDeVinculacionCliente: regex },
+                    { pretensionesEnDinero: regex },
+                    { calificacionInicialContingencia: regex },
+                    { calificacionActualContingencia: regex },
+                    { motivoDeLaCalificacion: regex },
+                    { instancia: regex },
+                    { etapaProcesal: regex },
+                    { claseDeMedidaCautelar: regex },
+                    { honorariosAsignados: regex },
+                    { autoridadDeConocimiento: regex },
+                    { delito: regex },
+                    { placa: regex },
+                    { evento: regex },
+                    { probabilidadDeExito: regex },
+                    { valorIndemnizadoCliente: regex },
+                    { entidadAfectada: regex },
+                    { tipoContragarantia: regex },
+                    { montoDeProvision: regex },
+                    { tipoDeMoneda: regex },
+                    { motivoDeTerminacion: regex },
+                    { seInicioEjecutivoAContinuacionDeOrdinario: regex },
+                    { honorariosAsignados2: regex },
+                    { valorPagado: regex },
+                    { personaQueRealizoElPago: regex },
+                    { departamento: regex },
+                    { asegurado: regex },
+                    { jurisdiccion: regex },
+                    { tituloUltimaActuacion: regex }
+                ]
+            }).select('_id');
+    
+            const casosSimplesIds = resultadosSimples.map(caso => caso._id);
+    
+            // Búsqueda en colecciones referenciadas
+            const clientes = await Cliente.find({ nombre: regex }).select('_id');
+            const clienteIds = clientes.map(cliente => cliente._id);
+    
+            const usuarios = await Usuario.find({ nombre: regex }).select('_id');
+            const usuarioIds = usuarios.map(usuario => usuario._id);
+    
+            const siniestros = await Siniestro.find({ numero: regex }).select('_id');
+            const siniestroIds = siniestros.map(siniestro => siniestro._id);
+    
+            const juzgados = await Juzgado.find({ nombre: regex }).select('_id');
+            const juzgadoIds = juzgados.map(juzgado => juzgado._id);
+    
+            const resultadosCombinados = await Caso.find({
+                $or: [
+                    { cliente: { $in: clienteIds } },
+                    { directorACargo: { $in: usuarioIds } },
+                    { abogadoACargo: { $in: usuarioIds } },
+                    { abogadoInternoDeLaCompania: { $in: usuarioIds } },
+                    { siniestro: { $in: siniestroIds } },
+                    { juzgadoInt: { $in: juzgadoIds } },
+                    { cliente2: { $in: clienteIds } },
+                    { abogadoInternoDeLaCompania2: { $in: usuarioIds } },
+                    { siniestro2: { $in: siniestroIds } },
+                    { juzgado: { $in: juzgadoIds } },
+                ]
+            }).select('_id');
+    
+            const casosReferenciadosIds = resultadosCombinados.map(caso => caso._id);
+    
+            // Combina todos los IDs encontrados
+            const todosLosIds = new Set([...casosSimplesIds, ...casosReferenciadosIds]);
+    
+            // Construye la consulta final
+            let query = Caso.find({ _id: { $in: Array.from(todosLosIds) } });
+    
+            // Aplica `.select()` si `selectedDataFields` tiene elementos.
+            if (selectedDataFields && selectedDataFields.length > 0) {
+                query = query.select(selectedDataFields.join(' ') + ' -_id');
+            }
+    
+            // Función auxiliar para verificar si un campo está en `selectedDataFields`.
+            const shouldPopulate = (field) => selectedDataFields.includes(field);
+    
+            // Aplica `.populate()` condicionalmente si el campo está en `selectedDataFields`.
+            if (shouldPopulate('cliente')) query = query.populate('cliente');
+            if (shouldPopulate('directorACargo')) query = query.populate('directorACargo');
+            if (shouldPopulate('abogadoACargo')) query = query.populate('abogadoACargo');
+            if (shouldPopulate('abogadoInternoDeLaCompania')) query = query.populate('abogadoInternoDeLaCompania');
+            if (shouldPopulate('siniestro')) query = query.populate('siniestro');
+            if (shouldPopulate('juzgadoInt')) query = query.populate('juzgadoInt');
+            if (shouldPopulate('cliente2')) query = query.populate('cliente2');
+            if (shouldPopulate('abogadoInternoDeLaCompania2')) query = query.populate('abogadoInternoDeLaCompania2');
+            if (shouldPopulate('siniestro2')) query = query.populate('siniestro2');
+            if (shouldPopulate('juzgado')) query = query.populate('juzgado');
+    
+            // Ejecuta la consulta con paginación
+            const casosFinales = await query.skip((page - 1) * limit).limit(parseInt(limit)).exec();
+    
+            // Contar el total de documentos que coinciden con la consulta
+            const total = await Caso.countDocuments({ _id: { $in: Array.from(todosLosIds) } });
+    
+            return res.status(200).json({
+                casos: casosFinales,
+                totalPages: Math.ceil(total / limit),
+                currentPage: parseInt(page),
+                totalCasos: total
+            });
+    
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ message: error.message });
+        }
+    },
     eliminar: async (req, res) => {
         const token = req.headers['authorization']
         console.log('encontrado')

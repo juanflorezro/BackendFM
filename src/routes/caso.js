@@ -35,8 +35,11 @@ router.get('/unique', casoControllers.listarUnique)
 
 // Ruta para listar todos los casos
 router.post('/', casoControllers.listar);
+router.post('/descargar', casoControllers.descargarArchivo);
+router.post('/descargarcoincidencias', casoControllers.descargarArchivoConincidencias);
 router.get('/eli', casoControllers.eliminarTodos);
 // Ruta para ver un caso específico
+//router.post('/caso', casoControllers.listar2); // Asegúrate de que esta ruta esté correcta
 //router.post('/caso', casoControllers.listar2); // Asegúrate de que esta ruta esté correcta
 router.get('/:id', casoControllers.listarIdcaso); // Asegúrate de que esta ruta esté correcta
 
