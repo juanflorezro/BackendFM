@@ -35,14 +35,17 @@ module.exports = {
     validacion: async (req,res) => {
         const token = req.headers['authorization']
         const acesso = await validationJWT(JSON.parse(token)).catch((err)=>{console.log(err)}) //catch terminar la promesa no BORRAR
-        
-        if(acesso){
-            const usuario = jwt.sign(acesso, CLAVEUSUARIO)
-            console.log(usuario)
-            res.status(201).json({message: 'acceso permitido', user: acesso, usuario})
-        }else {
-            res.status(500).json({message: 'acceso denegado'})
+        try {
+            if(acesso){
+                const usuario = jwt.sign(acesso, CLAVEUSUARIO)
+                res.status(201).json({message: 'acceso permitido', usuario})
+            }else {
+                res.status(500).json({message: 'acceso denegado'})
+            }
+        } catch (error) {
+            res.status(500).json({message: error})
         }
+        
     },
     autenticacion: async (req,res) => {
         const user = req.body.data.user
