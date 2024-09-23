@@ -41,9 +41,9 @@ const init = () => {
     const hours = currentTime.hours();
     const minutes = currentTime.minutes();
 
-    cron.schedule(`20 2 * * *`, async () => {
+    cron.schedule(`32 11 * * *`, async () => {
         try {
-            console.log('Iniciando backup a las 2:15 a.m.');
+            console.log('Iniciando backup a las 11:32 a.m.');
             await CreateBackUp()
              // Ajusta la URL si es necesario
             console.log('Backup completado con éxito.');
