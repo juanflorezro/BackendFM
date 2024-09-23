@@ -5,5 +5,6 @@ module.exports  = {
     MONGODBCONNECTION: process.env.MONGODBCONNECTION,
     CLAVEJWT: process.env.CLAVEJWT,
     CLAVECRYPTO: process.env.CLAVECRYPTO,
-    CLAVEUSUARIO: process.env.CLAVEUSUARIO
+    CLAVEUSUARIO: process.env.CLAVEUSUARIO,
+    CLAVEAPIDRIVE: process.env.GOOGLE_CREDENTIALS
 }
