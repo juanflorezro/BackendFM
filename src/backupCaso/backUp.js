@@ -6,6 +6,7 @@ const path = require('path');
 const express = require('express');
 const Caso = require('../models/caso');
 const { CLAVEAPIDRIVE } = require('../const/globalConst');
+const notificarBackup = require('../notifications/notification');
 
 
 //autenticacion a api drive 
@@ -196,6 +197,7 @@ async function CreateBackUp(res) {
 
         // Eliminar el archivo temporal
         fs.unlinkSync(tempFilePath);
+        notificarBackup('juridicaribesoftware@gmail.com')
         if(res){
             res.send(`Backup creado y subido a Google Drive con el ID: ${response.data.id}`);
         }
